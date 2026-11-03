@@ -1,0 +1,26 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Cosmos</title>
+  <link rel="manifest" href="manifest.webmanifest">
+  <link rel="icon" type="image/jpeg" href="assets/logo.jpg">
+  <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+  <meta name="theme-color" content="#0c0f17">
+  <script>
+    location.replace(matchMedia("(pointer:coarse) and (max-width:900px)").matches ? "m.html" : "pc.html");
+  </script>
+</head>
+<body style="background:#0c0f17; color:#fff; font-family:'IBM Plex Sans',system-ui,sans-serif; display:flex; align-items:center; justify-content:center; height:100vh; margin:0;">
+  <div style="text-align:center; padding:20px;">
+    <img src="assets/logo.jpg" alt="Cosmos" style="width:64px; height:64px; border-radius:14px; margin-bottom:14px; box-shadow:0 0 20px rgba(56,189,248,0.35);">
+    <h2 style="margin:0 0 10px; font-weight:700; letter-spacing:0.5px;">Cosmos</h2>
+    <p style="color:#94a3b8; font-size:13px; margin:0 0 18px;">Загрузка подходящей версии интерфейса...</p>
+    <div>
+      <a href="pc.html" style="display:inline-block; margin:6px; padding:9px 18px; background:#101524; border:1px solid rgba(255,255,255,0.15); color:#38bdf8; text-decoration:none; border-radius:8px; font-size:13px; font-weight:600;">Версия для ПК</a>
+      <a href="m.html" style="display:inline-block; margin:6px; padding:9px 18px; background:#101524; border:1px solid rgba(255,255,255,0.15); color:#38bdf8; text-decoration:none; border-radius:8px; font-size:13px; font-weight:600;">Версия для Телефона</a>
+    </div>
+  </div>
+</body>
+</html>

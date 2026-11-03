@@ -1,0 +1,550 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <title>Cosmos — OSINT Investigation Graph</title>
+  <meta name="description" content="Cosmos: Tactical OSINT Graph and Link Analysis. Zero-emoji high-contrast cyber matrix.">
+  <meta name="theme-color" content="#090c13">
+
+  <link rel="icon" type="image/jpeg" href="assets/logo.jpg">
+  <link rel="apple-touch-icon" href="assets/logo.jpg">
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+  <!-- Background Ambience & Dotted Matrix Grid -->
+  <div id="bg-layer"></div>
+  <div id="bg-dimmer"></div>
+  <div id="bg-dots"></div>
+  <canvas id="particles-canvas"></canvas>
+
+  <!-- Desktop Topbar Navigation -->
+  <header id="topbar">
+    <div class="topbar-left">
+      <div class="brand-wrap" id="btn-brand" title="Cosmos OSINT Workstation">
+        <img src="assets/logo.jpg" alt="Cosmos Logo" class="brand-logo-img">
+        <span class="brand-name">Cosmos</span>
+      </div>
+
+      <button class="nav-btn" id="btn-case-dropdown" title="Выбор кейса расследования">
+        <span class="icon">
+          <svg viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path></svg>
+        </span>
+        <span id="case-name-display">Фишинг-сеть</span>
+      </button>
+
+      <div class="search-wrap">
+        <input type="text" class="search-input" id="search-input" placeholder="Поиск (Ctrl+K)" autocomplete="off" spellcheck="false">
+        <button class="search-clear-btn" id="search-clear-btn">&times;</button>
+      </div>
+    </div>
+
+    <div class="topbar-center">
+      <button class="nav-btn primary" id="btn-add-node" title="Добавить новый объект (N)">
+        <span class="icon">
+          <svg viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.4" fill="none" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+        </span>
+        <span>Объект</span>
+      </button>
+
+      <button class="nav-btn" id="btn-link-mode" title="Создать связь между узлами (L)">
+        <span class="icon">
+          <svg viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg>
+        </span>
+        <span>Связь</span>
+      </button>
+
+      <button class="nav-btn" id="btn-layout" title="Иерархическая раскладка сети">
+        <span class="icon">
+          <svg viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round"><rect x="3" y="3" width="6" height="6" rx="1"></rect><rect x="15" y="3" width="6" height="6" rx="1"></rect><rect x="9" y="15" width="6" height="6" rx="1"></rect><path d="M6 9v3a3 3 0 0 0 3 3h3m3-6v3a3 3 0 0 1-3 3"></path></svg>
+        </span>
+        <span>Раскладка</span>
+      </button>
+
+      <button class="nav-btn" id="btn-fit" title="Вписать всю сеть в экран (Пробел)">
+        <span class="icon">
+          <svg viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round"><path d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3"></path></svg>
+        </span>
+        <span>Вписать</span>
+      </button>
+
+      <button class="nav-btn icon-only" id="btn-undo" title="Отменить действие (Ctrl+Z)">
+        <span class="icon">
+          <svg viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round"><path d="M9 14L4 9l5-5"></path><path d="M4 9h10.5a5.5 5.5 0 0 1 5.5 5.5v0a5.5 5.5 0 0 1-5.5 5.5H11"></path></svg>
+        </span>
+      </button>
+
+      <button class="nav-btn icon-only" id="btn-redo" title="Повторить действие (Ctrl+Y)">
+        <span class="icon">
+          <svg viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round"><path d="M15 14l5-5-5-5"></path><path d="M20 9H9.5A5.5 5.5 0 0 0 4 14.5v0A5.5 5.5 0 0 0 9.5 20H13"></path></svg>
+        </span>
+      </button>
+    </div>
+
+    <div class="topbar-right">
+      <button class="nav-btn primary" id="btn-open-snapshot" title="Снимок всей визуализации (P)">
+        <span class="icon">
+          <svg viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"></path><circle cx="12" cy="13" r="4"></circle></svg>
+        </span>
+        <span>Снимок</span>
+      </button>
+
+      <button class="nav-btn" id="btn-zen" title="Чистый экран без интерфейса (F / Esc)">
+        <span class="icon">
+          <svg viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>
+        </span>
+        <span>Чистый</span>
+      </button>
+
+      <button class="nav-btn" id="btn-dossier" title="Сводное разведывательное досье">
+        <span class="icon">
+          <svg viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line></svg>
+        </span>
+        <span>Досье</span>
+      </button>
+
+      <button class="nav-btn" id="btn-export-dropdown" title="Управление базой данных">
+        <span class="icon">
+          <svg viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round"><ellipse cx="12" cy="5" rx="9" ry="3"></ellipse><path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"></path><path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"></path></svg>
+        </span>
+        <span>База</span>
+      </button>
+
+      <button class="nav-btn" id="btn-open-settings" title="Настройки системы и визуализации">
+        <span class="icon">
+          <svg viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg>
+        </span>
+        <span>Настройки</span>
+      </button>
+
+      <button class="nav-btn icon-only" id="btn-reset" title="Сбросить граф к эталону">
+        <span class="icon">
+          <svg viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"></path><path d="M3 3v5h5"></path></svg>
+        </span>
+      </button>
+
+      <!-- Mobile Menu Trigger -->
+      <button class="nav-btn icon-only" id="btn-mobile-menu-trigger" title="Открыть меню">
+        <span class="icon">
+          <svg viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round"><line x1="3" y1="12" x2="21" y2="12"></line><line x1="3" y1="6" x2="21" y2="6"></line><line x1="3" y1="18" x2="21" y2="18"></line></svg>
+        </span>
+      </button>
+    </div>
+  </header>
+
+  <!-- Zen Mode Floating Badge -->
+  <div id="zen-badge" title="Выйти из чистого режима (Esc)">
+    <span class="icon">
+      <svg viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+    </span>
+    <span>Выйти из чистого экрана (Esc)</span>
+  </div>
+
+  <!-- Case Selector Popover -->
+  <div class="popover-menu" id="case-popover">
+    <div class="popover-item active" data-case="0">
+      <span>1. Фишинг-сеть Cosmos (acme-secure)</span>
+      <span style="font-size: 10px; color: var(--text-dim);">11 объектов</span>
+    </div>
+    <div class="popover-item" data-case="1">
+      <span>2. OSINT: Профиль субъекта (Телефон/Адрес)</span>
+      <span style="font-size: 10px; color: var(--text-dim);">8 объектов</span>
+    </div>
+    <div style="height: 1px; background: var(--border-subtle); margin: 4px 0;"></div>
+    <div class="popover-item" id="btn-new-empty-case" style="color: var(--border-accent);">
+      <span>+ Создать пустое расследование</span>
+    </div>
+  </div>
+
+  <!-- Export Popover -->
+  <div class="popover-menu" id="export-popover">
+    <div class="popover-item" id="btn-action-snapshot">
+      <span>Открыть снимок сети</span>
+    </div>
+    <div class="popover-item" id="btn-action-export-json">
+      <span>Скачать базу (.json)</span>
+    </div>
+    <div class="popover-item" id="btn-action-import-json">
+      <span>Загрузить базу (.json)</span>
+    </div>
+  </div>
+
+  <!-- Viewport Canvas -->
+  <main id="viewport">
+    <div id="world">
+      <svg id="edges-svg"></svg>
+      <div id="nodes-layer"></div>
+    </div>
+  </main>
+
+  <!-- Bottom Left HUD (Spectrum Equalizer & Telemetry) -->
+  <aside id="bottom-left-dock">
+    <div class="spectrum-card" id="spectrum-widget" title="Категориальный спектр сети (Клик для авто-раскладки)">
+      <div class="spectrum-flank-line"></div>
+      <div class="spectrum-bars-grid" id="spectrum-bars">
+        <div class="spectrum-col">
+          <div class="spectrum-pill" style="background:#38bdf8;"></div>
+          <div class="spectrum-pill" style="background:#c084fc;"></div>
+          <div class="spectrum-pill" style="background:#fbbf24;"></div>
+          <div class="spectrum-pill" style="background:#34d399;"></div>
+        </div>
+        <div class="spectrum-col">
+          <div class="spectrum-pill" style="background:#f87171;"></div>
+          <div class="spectrum-pill" style="background:#38bdf8;"></div>
+          <div class="spectrum-pill" style="background:#c084fc;"></div>
+          <div class="spectrum-pill" style="background:#fbbf24;"></div>
+          <div class="spectrum-pill" style="background:#ec4899;"></div>
+        </div>
+        <div class="spectrum-col">
+          <div class="spectrum-pill" style="background:#38bdf8;"></div>
+          <div class="spectrum-pill" style="background:#fbbf24;"></div>
+          <div class="spectrum-pill" style="background:#c084fc;"></div>
+          <div class="spectrum-pill" style="background:#34d399;"></div>
+        </div>
+        <div class="spectrum-col">
+          <div class="spectrum-pill" style="background:#94a3b8;"></div>
+          <div class="spectrum-pill" style="background:#eab308;"></div>
+        </div>
+      </div>
+      <div class="spectrum-flank-line"></div>
+    </div>
+
+    <div class="telemetry-text" id="telemetry-text">
+      <span id="stat-nodes">11</span> узлов &middot; <span id="stat-edges">12</span> связей &middot; <span id="stat-zoom">62%</span>
+    </div>
+  </aside>
+
+  <!-- Mobile Bottom Navigation (Phone Edition) -->
+  <nav id="mobile-bottom-nav">
+    <button class="mobile-nav-item primary-item" id="btn-mobile-add">
+      <span class="icon">
+        <svg viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5" fill="none"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+      </span>
+      <span>Объект</span>
+    </button>
+
+    <button class="mobile-nav-item" id="btn-mobile-link">
+      <span class="icon">
+        <svg viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" fill="none"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg>
+      </span>
+      <span>Связь</span>
+    </button>
+
+    <button class="mobile-nav-item" id="btn-mobile-layout">
+      <span class="icon">
+        <svg viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" fill="none"><rect x="3" y="3" width="6" height="6" rx="1"></rect><rect x="15" y="3" width="6" height="6" rx="1"></rect><rect x="9" y="15" width="6" height="6" rx="1"></rect><path d="M6 9v3a3 3 0 0 0 3 3h3m3-6v3a3 3 0 0 1-3 3"></path></svg>
+      </span>
+      <span>Раскладка</span>
+    </button>
+
+    <button class="mobile-nav-item" id="btn-mobile-snapshot">
+      <span class="icon">
+        <svg viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" fill="none"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"></path><circle cx="12" cy="13" r="4"></circle></svg>
+      </span>
+      <span>Снимок</span>
+    </button>
+
+    <button class="mobile-nav-item" id="btn-mobile-more">
+      <span class="icon">
+        <svg viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" fill="none"><circle cx="12" cy="12" r="1"></circle><circle cx="19" cy="12" r="1"></circle><circle cx="5" cy="12" r="1"></circle></svg>
+      </span>
+      <span>Меню</span>
+    </button>
+  </nav>
+
+  <!-- Mobile Bottom Sheet (Phone Inspector & Menu) -->
+  <aside id="mobile-sheet">
+    <div class="sheet-handle"></div>
+    <div class="sheet-header">
+      <div class="sheet-title" id="sheet-title">Свойства объекта</div>
+      <button class="close-btn" id="btn-close-sheet">
+        <span class="icon"><svg viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" fill="none"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg></span>
+      </button>
+    </div>
+    <div class="sheet-content" id="sheet-content"></div>
+  </aside>
+
+  <!-- Node Inspector Modal (Desktop) -->
+  <div class="modal-backdrop" id="inspector-modal">
+    <div class="modal-dialog">
+      <div class="modal-title">
+        <span>КАРТОЧКА ОБЪЕКТА РАССЛЕДОВАНИЯ</span>
+        <button class="close-btn" id="btn-close-inspector">
+          <span class="icon"><svg viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" fill="none"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg></span>
+        </button>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">Категория / Тип</label>
+        <input type="text" class="form-input" id="ed-tag" placeholder="Субъект, Организация, Место, Контакт, Документ, Заметка">
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">Заголовок объекта</label>
+        <input type="text" class="form-input" id="ed-title" placeholder="Основное наименование">
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">Сведения разведки / Описание</label>
+        <textarea class="form-textarea" id="ed-sub" placeholder="Детали, регистратор, кейс..."></textarea>
+      </div>
+
+      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+        <div class="form-group">
+          <label class="form-label">Уровень риска</label>
+          <select class="form-select" id="ed-risk">
+            <option value="none">Штатный</option>
+            <option value="low">Низкий (low)</option>
+            <option value="med">Средний (med)</option>
+            <option value="high">Высокий (high)</option>
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Цвет категории</label>
+          <select class="form-select" id="ed-color">
+            <option value="#38bdf8">Голубой (Субъект)</option>
+            <option value="#c084fc">Фиолетовый (Организация)</option>
+            <option value="#34d399">Изумрудный (Место / IP)</option>
+            <option value="#fbbf24">Янтарный (Контакт / Почта)</option>
+            <option value="#94a3b8">Графитовый (Документ / Сертификат)</option>
+            <option value="#eab308">Золотой (Заметка)</option>
+            <option value="#ec4899">Розовый</option>
+          </select>
+        </div>
+      </div>
+
+      <div style="display: flex; justify-content: space-between; gap: 8px; margin-top: 8px;">
+        <button class="nav-btn" id="btn-delete-node" style="color: #f87171; border-color: rgba(248,113,113,0.3);">Удалить объект</button>
+        <button class="nav-btn primary" id="btn-save-node" style="padding: 0 24px;">Сохранить</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Dossier Modal -->
+  <div class="modal-backdrop" id="dossier-modal">
+    <div class="modal-dialog" style="max-width: 680px;">
+      <div class="modal-title">
+        <div style="display: flex; align-items: center; gap: 8px;">
+          <img src="assets/logo.jpg" alt="Cosmos Logo" class="modal-title-icon">
+          <span>РАЗВЕДЫВАТЕЛЬНОЕ ДОСЬЕ COSMOS</span>
+        </div>
+        <button class="close-btn" id="btn-close-dossier">
+          <span class="icon"><svg viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" fill="none"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg></span>
+        </button>
+      </div>
+      <div class="dossier-paper" id="dossier-text"></div>
+      <div style="display: flex; justify-content: flex-end; gap: 8px;">
+        <button class="nav-btn" id="btn-copy-dossier">Скопировать текст</button>
+        <button class="nav-btn primary" id="btn-download-dossier">Скачать отчет (.md)</button>
+        <button class="nav-btn" id="btn-print-dossier">Печать / PDF</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- JSON Import Modal -->
+  <div class="modal-backdrop" id="json-modal">
+    <div class="modal-dialog">
+      <div class="modal-title">
+        <span>ИМПОРТ БАЗЫ ДАННЫХ (JSON)</span>
+        <button class="close-btn" id="btn-close-json">
+          <span class="icon"><svg viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" fill="none"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg></span>
+        </button>
+      </div>
+      <textarea id="json-textarea" class="form-textarea" style="height: 180px; font-family: var(--font-mono); font-size: 11px;" placeholder="Вставьте JSON данные расследования..."></textarea>
+      <input type="file" id="json-file-input" accept=".json" style="display: none;">
+      <div style="display: flex; justify-content: space-between; gap: 8px;">
+        <button class="nav-btn" id="btn-trigger-json-file">Выбрать файл .json</button>
+        <button class="nav-btn primary" id="btn-apply-json">Применить</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Full Visualization Snapshot Modal (Photo Mode) -->
+  <div class="modal-backdrop" id="snapshot-modal">
+    <div class="modal-dialog" style="max-width: 960px; width: 95vw;">
+      <div class="modal-title">
+        <div style="display: flex; align-items: center; gap: 8px;">
+          <img src="assets/logo.jpg" alt="Cosmos Logo" class="modal-title-icon">
+          <span>СНИМОК ВИЗУАЛИЗАЦИИ COSMOS</span>
+        </div>
+        <button class="close-btn" id="btn-close-snapshot">
+          <span class="icon"><svg viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" fill="none"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg></span>
+        </button>
+      </div>
+
+      <div class="snapshot-container">
+        <div class="snapshot-preview-box">
+          <img id="snapshot-img" alt="Снимок графа расследования">
+        </div>
+      </div>
+
+      <div class="snapshot-actions-bar">
+        <div class="snapshot-info-text" id="snapshot-info-text">
+          Разрешение: Ultra-HD 2K • Все объекты и связи сети
+        </div>
+        <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+          <button class="nav-btn primary" id="btn-snapshot-copy">
+            <span class="icon"><svg viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" fill="none"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg></span>
+            <span>Скопировать картинку</span>
+          </button>
+          <button class="nav-btn" id="btn-snapshot-open">
+            <span class="icon"><svg viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" fill="none"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path><polyline points="15 3 21 3 21 9"></polyline><line x1="10" y1="14" x2="21" y2="3"></line></svg></span>
+            <span>В новой вкладке</span>
+          </button>
+          <button class="nav-btn" id="btn-snapshot-download">
+            <span class="icon"><svg viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" fill="none"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg></span>
+            <span>Скачать PNG</span>
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Centralized Settings Modal -->
+  <div class="modal-backdrop" id="settings-modal">
+    <div class="modal-dialog" style="max-width: 540px;">
+      <div class="modal-title">
+        <div style="display: flex; align-items: center; gap: 8px;">
+          <span class="icon">
+            <svg viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg>
+          </span>
+          <span>НАСТРОЙКИ СИСТЕМЫ И ВИЗУАЛИЗАЦИИ</span>
+        </div>
+        <button class="close-btn" id="btn-close-settings">
+          <span class="icon"><svg viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" fill="none"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg></span>
+        </button>
+      </div>
+
+      <!-- Section: Canvas & Dots -->
+      <div class="settings-section">
+        <div class="settings-section-title">
+          <span>Сетка белых точек и холст</span>
+        </div>
+        <div class="settings-row">
+          <span>Сетка белых точек матрицы</span>
+          <label class="toggle-switch">
+            <input type="checkbox" id="settings-toggle-dots">
+            <span class="toggle-slider"></span>
+          </label>
+        </div>
+        <div class="slider-group" id="group-dots-opacity" style="display: none;">
+          <label>
+            <span>Яркость точек</span>
+            <span id="label-dots-opacity">9%</span>
+          </label>
+          <input type="range" id="slider-dots-opacity" min="3" max="25" value="9">
+        </div>
+      </div>
+
+      <!-- Section: Atmosphere & Backgrounds -->
+      <div class="settings-section">
+        <div class="settings-section-title">
+          <span>Атмосфера и фоны</span>
+        </div>
+        <div class="presets-grid" id="presets-grid"></div>
+
+        <input type="file" id="custom-bg-input" accept="image/*" style="display: none;">
+        <button class="nav-btn" id="btn-upload-bg" style="width: 100%; height: 32px; justify-content: center;">
+          <span class="icon"><svg viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" fill="none"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="17 8 12 3 7 8"></polyline><line x1="12" y1="3" x2="12" y2="15"></line></svg></span>
+          <span>Загрузить своё фото</span>
+        </button>
+
+        <div class="slider-group">
+          <label>
+            <span>Затемнение фона</span>
+            <span id="label-dim">35%</span>
+          </label>
+          <input type="range" id="slider-dim" min="0" max="95" value="35">
+        </div>
+
+        <div class="slider-group">
+          <label>
+            <span>Размытие (Blur)</span>
+            <span id="label-blur">0px</span>
+          </label>
+          <input type="range" id="slider-blur" min="0" max="20" value="0">
+        </div>
+
+        <div class="settings-row">
+          <span>Атмосферные частицы</span>
+          <select class="form-select" id="select-particles" style="width: 140px; padding: 4px 8px;">
+            <option value="off">Выключены</option>
+            <option value="snow">Снегопад</option>
+            <option value="matrix">Кибер-искры</option>
+          </select>
+        </div>
+      </div>
+
+      <!-- Section: Traces & Edges -->
+      <div class="settings-section">
+        <div class="settings-section-title">
+          <span>Связи и эффекты линий (Trace)</span>
+        </div>
+        <div class="settings-row">
+          <span>Импульс пакетов данных по связям</span>
+          <label class="toggle-switch">
+            <input type="checkbox" id="settings-toggle-flow" checked>
+            <span class="toggle-slider"></span>
+          </label>
+        </div>
+        <div class="settings-row">
+          <span>Толщина линий связей</span>
+          <select class="form-select" id="settings-select-edge-width" style="width: 140px; padding: 4px 8px;">
+            <option value="1.5">Тонкие (1.5px)</option>
+            <option value="1.8" selected>Стандарт (1.8px)</option>
+            <option value="2.6">Четкие (2.6px)</option>
+          </select>
+        </div>
+      </div>
+
+      <!-- Section: Interface -->
+      <div class="settings-section">
+        <div class="settings-section-title">
+          <span>Интерфейс системы</span>
+        </div>
+        <div class="settings-row">
+          <span>Режим отображения</span>
+          <select class="form-select" id="settings-select-device-mode" style="width: 140px; padding: 4px 8px;">
+            <option value="auto">Авто-выбор</option>
+            <option value="pc">Только ПК</option>
+            <option value="phone">Только Телефон</option>
+          </select>
+        </div>
+        <div class="settings-row">
+          <span>Спектральный виджет (эквалайзер)</span>
+          <label class="toggle-switch">
+            <input type="checkbox" id="settings-toggle-spectrum" checked>
+            <span class="toggle-slider"></span>
+          </label>
+        </div>
+        <div class="settings-row">
+          <span>Язык интерфейса</span>
+          <select class="form-select" id="settings-select-lang" style="width: 140px; padding: 4px 8px;">
+            <option value="RU">Русский (RU)</option>
+            <option value="EN">English (EN)</option>
+          </select>
+        </div>
+        <button class="nav-btn" id="btn-settings-reset" style="width: 100%; height: 32px; justify-content: center; color: #f87171; border-color: rgba(248,113,113,0.3); margin-top: 4px;">
+          Сбросить граф к исходному состоянию
+        </button>
+      </div>
+
+      <div style="display: flex; justify-content: flex-end; margin-top: 4px;">
+        <button class="nav-btn primary" id="btn-save-settings" style="padding: 0 24px;">Готово</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Toast Notification -->
+  <div id="toast">Действие выполнено</div>
+
+  <script src="app.js"></script>
+</body>
+</html>
